@@ -1,0 +1,151 @@
+name: Gerar ISO Gentoo Customizada com Mídia
+
+on:
+  workflow_dispatch: # Permite iniciar manualmente pela aba Actions do GitHub
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    container:
+      image: gentoo/stage3:amd64-openrc
+      options: --privileged # Necessário para montar sistemas de arquivos internos da ISO
+
+    steps:
+    - name: Baixar o código do repositório
+      uses: actions/checkout@v4
+
+    - name: Sincronizar Repositórios do Gentoo
+      run: |
+        emerge-webrsync
+        emerge --sync
+
+    - name: Injetar Configurações Personalizadas do AMD A4
+      run: |
+        cp ./portage/make.conf /etc/portage/make.conf
+
+    - name: Aceitar Licenças de Software (Firmwares, Codecs e Firefox)
+      run: |
+        echo '*/*' >> /etc/portage/package.license
+
+    - name: Pré-instalar Interface, Barra Retrô e Aplicativos
+      run: |
+        # Instala Servidor Gráfico, Interface Openbox, Flatpak, Firefox Pronto e a barra (fbpanel)
+        emerge x11-base/xorg-server x11-wm/openbox sys-apps/flatpak x11-misc/fbpanel www-client/firefox-bin
+        
+        # Instala a suíte de aplicativos de mídia e escritório
+        emerge media-tv/kodi app-office/libreoffice media-sound/clementine media-video/vlc
+
+        # Cria a pasta de configurações e inicialização automática da interface
+        mkdir -p /etc/xdg/openbox
+        mkdir -p /etc/fbpanel
+
+        # Configura o Openbox para iniciar a barra estilo Windows 95 automaticamente no login
+        cat <<EOF > /etc/xdg/openbox/autostart
+        fbpanel &
+        EOF
+
+        # Configura o Menu Iniciar e os botões da barra fbpanel em português
+        cat <<EOF > /etc/fbpanel/default
+        Global {
+            edge = bottom
+            allign = left
+            margin = 0
+            widthtype = percent
+            width = 100
+            height = 28
+            transparent = false
+            tintcolor = #ffffff
+            alpha = 255
+            setdocktype = true
+            setpartialstrut = true
+            autohide = false
+            heightwhenhidden = 2
+        }
+
+        Plugin {
+            type = menu
+            config {
+                image = logowin95
+                name = Iniciar
+                item {
+                    name = Navegador Web Firefox
+                    image = firefox
+                    action = firefox
+                }
+                separator {}
+                item {
+                    name = Central de Mídia Kodi
+                    image = kodi
+                    action = kodi
+                }
+                item {
+                    name = LibreOffice Writer
+                    image = libreoffice-writer
+                    action = libreoffice --writer
+                }
+                item {
+                    name = Player de Música Clementine
+                    image = clementine
+                    action = clementine
+                }
+                item {
+                    name = Reprodutor de Vídeo VLC
+                    image = vlc
+                    action = vlc
+                }
+                separator {}
+                item {
+                    name = Terminal de Comando
+                    image = terminal
+                    action = xterm
+                }
+            }
+        }
+
+        Plugin {
+            type = taskbar
+            config {
+                tooltips = true
+                icons = true
+                maxwidth = 150
+            }
+        }
+
+        Plugin {
+            type = tclock
+            config {
+                ClockFmt = %H:%M
+                TooltipFmt = %A %x
+            }
+        }
+        EOF
+
+    - name: Preparar o Snapshot do Catalyst
+      run: |
+        catalyst -s stable
+
+    - name: Criar Arquivo de Especificação da ISO
+      run: |
+        cat <<EOF > media-iso.spec
+        subarch: amd64
+        version_stamp: amd4-media-custom
+        target: livecd-stage2
+        rel_type: default
+        profile: default/linux/amd64/23.0/desktop/no-systemd
+        snapshot_treeish: stable
+        source_subpath: default/stage3-amd64-openrc-latest
+        livecd/bootargs: dockeymap looptype=squashfs console=tty1
+        livecd/gk_mainargs: --minkernpackage
+        livecd/iso: gentoo-amd64-a4-media.iso
+        EOF
+
+    - name: Compilar e Construir a ISO Final
+      run: |
+        catalyst -f media-iso.spec
+
+    - name: Upload da ISO Pronta
+      uses: actions/upload-artifact@v4
+      with:
+        name: Gentoo-Media-A4-ISO
+        path: /var/tmp/catalyst/builds/default/gentoo-amd64-a4-media.iso
+        retention-days: 5
