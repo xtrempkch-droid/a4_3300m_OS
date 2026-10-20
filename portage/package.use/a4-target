@@ -1,0 +1,15 @@
+# Correções de dependências necessárias para o perfil desktop no alvo.
+
+# Ciclo detectado pelo Portage:
+# docutils -> pillow[truetype] -> harfbuzz -> glib -> docutils
+dev-python/pillow -truetype
+
+# pango (dependência do openbox/gtk) exige freetype com harfbuzz.
+media-libs/freetype harfbuzz
+
+# O livecd usa OpenRC; evita que o polkit/flatpak puxem o stack do systemd.
+sys-auth/polkit -systemd
+sys-apps/flatpak -systemd
+
+# Firmware não precisa ser embutido em initramfs (economiza espaço na ISO).
+sys-kernel/linux-firmware -initramfs

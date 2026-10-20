@@ -1,0 +1,37 @@
+# livecd-stage2: monta o kernel e empacota a ISO a partir do stage1.
+# Placeholders substituídos por scripts/build-iso.sh.
+
+subarch: amd64
+version_stamp: @VERSION_STAMP@
+target: livecd-stage2
+rel_type: default
+
+profile: default/linux/amd64/23.0/desktop
+
+snapshot_treeish: @SNAPSHOT@
+source_subpath: default/livecd-stage1-amd64-@VERSION_STAMP@
+portage_confdir: @WORKSPACE@/portage
+
+# Kernel do livecd (gentoo-sources + initramfs do genkernel).
+boot/kernel: a4
+boot/kernel/a4/sources: sys-kernel/gentoo-sources
+
+# O Catalyst acrescenta sozinho "cdroot looptype=squashfs loop=/image.squashfs".
+livecd/type: generic-livecd
+livecd/fstype: squashfs
+livecd/volid: A4_MEDIA_OS
+livecd/bootargs: dokeymap
+livecd/gk_mainargs: --all-ramdisk-modules --makeopts=-j4
+livecd/iso: gentoo-a4-media-@VERSION_STAMP@.iso
+
+# Remove arquivos que não são usados em runtime (economia de espaço na ISO).
+# NÃO inclua /usr/share/locale: as traduções pt-BR são necessárias.
+livecd/unmerge: sys-kernel/gentoo-sources sys-kernel/genkernel dev-lang/rust-bin
+livecd/empty: /var/tmp /var/cache /var/log /tmp /usr/src /usr/include /usr/share/man /usr/share/info /usr/share/doc /usr/share/gtk-doc /usr/share/genkernel
+
+# Configurações, usuário e autologin da interface.
+livecd/root_overlay: @WORKSPACE@/overlay
+livecd/fsscript: @WORKSPACE@/catalyst/fsscript.sh
+
+# Serviços habilitados no livecd.
+livecd/rcadd: dbus|default elogind|default dhcpcd|default acpid|default display-manager|default

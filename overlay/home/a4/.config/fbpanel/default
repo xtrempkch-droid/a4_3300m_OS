@@ -1,0 +1,88 @@
+# fbpanel - painel estilo Windows 95 para o A4 Media OS.
+# Lido de ~/.config/fbpanel/default (fbpanel NÃO lê /etc/fbpanel).
+
+Global {
+    edge = bottom
+    allign = left
+    widthtype = percent
+    width = 100
+    heighttype = pixel
+    height = 28
+    transparent = false
+    tintcolor = #c0c0c0
+    setdocktype = true
+    setpartialstrut = true
+    autohide = false
+    heightwhenhidden = 2
+}
+
+Plugin {
+    type = menu
+    config {
+        IconSize = 22
+        image = /usr/share/fbpanel/images/logo.png
+
+        item {
+            name = Navegador Web Firefox
+            icon = firefox
+            action = firefox
+        }
+        item {
+            name = Central de Midia Kodi
+            icon = kodi
+            action = kodi
+        }
+        item {
+            name = LibreOffice Writer
+            icon = libreoffice-writer
+            action = libreoffice --writer
+        }
+        item {
+            name = LibreOffice Calc
+            icon = libreoffice-calc
+            action = libreoffice --calc
+        }
+        item {
+            name = Player de Musica Strawberry
+            icon = strawberry
+            action = strawberry
+        }
+        item {
+            name = Reprodutor de Video VLC
+            icon = vlc
+            action = vlc
+        }
+        item {
+            name = Terminal de Comando
+            icon = utilities-terminal
+            action = xterm
+        }
+        separator {}
+        item {
+            name = Reiniciar
+            image = /usr/share/fbpanel/images/gnome-session-reboot.png
+            action = sudo /sbin/shutdown -r now
+        }
+        item {
+            name = Desligar
+            image = /usr/share/fbpanel/images/gnome-session-halt.png
+            action = sudo /sbin/shutdown -h now
+        }
+    }
+}
+
+Plugin {
+    type = taskbar
+    config {
+        tooltips = true
+        maxtaskwidth = 150
+    }
+}
+
+Plugin {
+    type = tclock
+    config {
+        ClockFmt = %H:%M
+        TooltipFmt = %A %x
+    }
+}

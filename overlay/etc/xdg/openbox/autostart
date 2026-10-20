@@ -1,0 +1,7 @@
+#!/bin/sh
+# Iniciado pelo openbox-session.
+
+xsetroot -solid '#3a6ea5' &
+setxkbmap br 2>/dev/null || setxkbmap -layout br 2>/dev/null || true
+pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
+fbpanel &

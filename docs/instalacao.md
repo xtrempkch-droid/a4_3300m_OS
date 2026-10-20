@@ -2,22 +2,55 @@
 
 ## 💾 Passo 1: Gravando a Mídia
 1. Baixe o arquivo `.iso` gerado nos artefatos do seu GitHub Actions.
-2. Utilize o software **Rufus** (em modo DD) ou insira a ISO em um pen drive configurado com o **Ventoy**.
+2. Utilize o **Rufus** (modo DD) ou insira a ISO em um pen drive configurado com
+   o **Ventoy**. A ISO é híbrida (BIOS legado + UEFI).
 
 ## 💻 Passo 2: Inicialização (Boot)
 1. Conecte o pen drive no notebook AMD A4.
-2. Ligue o aparelho pressionando a tecla de Boot (geralmente F12, F11 ou F9 dependendo da marca do notebook).
-3. Selecione a opção correspondente ao seu pen drive (Dê preferência para o modo **UEFI** se disponível).
+2. Ligue pressionando a tecla de Boot (F12, F11 ou F9, conforme a marca).
+3. Selecione o pen drive (UEFI se disponível; o BIOS legado também funciona).
+4. No menu do GRUB, a opção padrão inicia o sistema. O parâmetro `dokeymap`
+   permite escolher o teclado ABNT2 antes da inicialização.
 
 ## 🚀 Passo 3: O Ambiente de Trabalho
-Ao carregar o sistema, a barra cinza clássica estilo Windows 95 aparecerá na parte inferior.
-* Clique no botão **Iniciar** para abrir o Firefox, LibreOffice, Kodi, VLC ou Clementine.
-* Caso queira instalar novos aplicativos do mundo moderno (como Spotify, Discord, etc.), abra o **Terminal** e utilize o Flatpak:
-  ```bash
-  flatpak remote-add --if-not-exists flathub https://flathub.org
-  flatpak install flathub com.spotify.Client
-  ```
+O SLiM faz **autologin** no usuário `a4` (sem senha) e abre o Openbox com a
+barra cinza estilo Windows 95. Para obter root use:
+
+```bash
+sudo -i
+```
+
+Menu **Iniciar**:
+* **Firefox** — navegador;
+* **Kodi** — central de mídia;
+* **LibreOffice Writer / Calc** — escritório;
+* **Strawberry** — músicas (substitui o Clementine, que saiu do Gentoo);
+* **VLC** — vídeos;
+* **Terminal (xterm)**;
+* **Reiniciar / Desligar**.
+
+### Rede
+Com cabo, o `dhcpcd` já sobe automaticamente. Para Wi-Fi:
+
+```bash
+sudo -i
+wpa_passphrase "NOME_DA_REDE" "SENHA" > /etc/wpa_supplicant/wpa_supplicant.conf
+wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+dhcpcd wlan0
+```
+
+### Flatpak
+```bash
+flatpak remote-add --if-not-exists flathub https://flathub.org
+flatpak install flathub com.spotify.Client
+```
 
 ## 🔋 Recomendações de Uso no Dia a Dia
-* **Abas do Navegador:** Evite abrir mais de 4 ou 5 abas simultaneamente no Firefox. O processador dual-core sofrerá com excesso de scripts paralelos.
-* **Extensões Recomendadas:** Instale imediatamente a extensão **uBlock Origin** no Firefox para bloquear anúncios e scripts pesados das páginas da web, poupando processamento.
+* **Abas do navegador:** evite abrir mais de 4 ou 5 abas simultaneamente; o
+  processador dual-core sofre com muitos scripts paralelos.
+* **uBlock Origin:** instale imediatamente no Firefox para bloquear anúncios e
+  scripts pesados.
+* **Aceleração de vídeo:** VLC e Kodi já usam `vaapi`/`vdpau`. Em 1080p, prefira
+  o backend VDPAU (a iGPU Sumo decodifica H.264 via UVD).
+* **Locale:** o sistema inicia em `pt_BR.UTF-8`, com teclado ABNT2 configurado
+  no autostart do Openbox e fuso `America/Sao_Paulo`.

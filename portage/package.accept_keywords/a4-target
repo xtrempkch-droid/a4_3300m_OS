@@ -1,0 +1,3 @@
+# genkernel não possui keywords estáveis no Gentoo (é independente de arch),
+# mas é obrigatório para o Catalyst compilar o kernel do livecd.
+sys-kernel/genkernel ~amd64

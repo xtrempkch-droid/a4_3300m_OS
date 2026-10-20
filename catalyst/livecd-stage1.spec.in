@@ -1,0 +1,53 @@
+# livecd-stage1: instala no chroot todos os pacotes do sistema final.
+# Placeholders (@WORKSPACE@, @VERSION_STAMP@, @SNAPSHOT@, @STAGE3_SUBPATH@)
+# são substituídos por scripts/build-iso.sh antes de chamar o Catalyst.
+
+subarch: amd64
+version_stamp: @VERSION_STAMP@
+target: livecd-stage1
+rel_type: default
+
+# Perfil OpenRC. NÃO existe "desktop/no-systemd": o perfil "desktop" já é OpenRC.
+profile: default/linux/amd64/23.0/desktop
+
+snapshot_treeish: @SNAPSHOT@
+source_subpath: @STAGE3_SUBPATH@
+portage_confdir: @WORKSPACE@/portage
+
+livecd/packages:
+  app-admin/sudo
+  app-admin/sysklogd
+  app-arch/unzip
+  app-misc/livecd-tools
+  app-office/libreoffice-bin
+  dev-lang/rust-bin
+  gui-libs/display-manager-init
+  media-fonts/dejavu
+  media-fonts/liberation-fonts
+  media-sound/alsa-utils
+  media-sound/strawberry
+  media-tv/kodi
+  media-video/vlc
+  net-misc/dhcpcd
+  net-wireless/iw
+  net-wireless/wpa_supplicant
+  sys-apps/dbus
+  sys-apps/flatpak
+  sys-apps/pciutils
+  sys-apps/usbutils
+  sys-auth/elogind
+  sys-kernel/linux-firmware
+  sys-power/acpid
+  www-client/firefox-bin
+  x11-apps/setxkbmap
+  x11-apps/xauth
+  x11-apps/xinit
+  x11-apps/xsetroot
+  x11-base/xorg-drivers
+  x11-base/xorg-server
+  x11-misc/fbpanel
+  x11-misc/slim
+  x11-misc/xdg-utils
+  x11-terms/xterm
+  x11-themes/hicolor-icon-theme
+  x11-wm/openbox

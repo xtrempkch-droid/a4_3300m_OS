@@ -1,0 +1,16 @@
+
+  A4 Media OS - Gentoo Linux otimizado para AMD A4-3300M
+  ------------------------------------------------------
+
+  Usuário padrão: a4 (autologin, sem senha)
+  Para obter root: sudo -i
+
+  Firefox        navegador
+  Kodi           central de mídia
+  LibreOffice    escritório
+  Strawberry     músicas (sucessor do Clementine)
+  VLC            vídeos
+  xterm          terminal
+
+  Este é um sistema LIVE: alterações em / são perdidas ao desligar.
+  Consulte docs/instalacao.md no repositório do projeto para mais detalhes.

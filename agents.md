@@ -14,10 +14,10 @@ Extrair 100% de performance de processamento e economia de memória RAM em um pr
 
 ## 🛠️ Stack de Software Injetado
 * **Base:** Gentoo Linux (Perfil Desktop, OpenRC, sem Systemd)
-* **Interface Visual:** Openbox WM + FBPanel (Visual Retrô Estilo Windows 95)
+* **Interface Visual:** Openbox WM + FBPanel (Visual Retrô Estilo Windows 95) + SLiM (login com autologin)
 * **Navegador:** Firefox-bin (Versão binária oficial para evitar estouro de timeout do GitHub)
-* **Multimídia:** Kodi Media Center, VLC Player e Clementine Music Player
-* **Produtividade:** Suíte LibreOffice Completa
+* **Multimídia:** Kodi Media Center, VLC Player e Strawberry (sucessor mantido do Clementine, removido do Gentoo)
+* **Produtividade:** Suíte LibreOffice Completa (binária)
 * **Gerenciador de Pacotes Extra:** Flatpak (Para portabilidade futura)
 
 ## ⚡ Regras de Otimização Estrita

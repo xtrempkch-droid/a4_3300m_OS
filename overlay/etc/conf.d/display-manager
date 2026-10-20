@@ -1,0 +1,3 @@
+# Gerenciador de display usado pelo serviço display-manager (OpenRC).
+CHECKVT=7
+DISPLAYMANAGER="slim"
