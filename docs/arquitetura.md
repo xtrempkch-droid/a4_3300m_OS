@@ -14,6 +14,13 @@ As flags ficam em [portage/make.conf](../portage/make.conf) e são aplicadas
 o perfil padrão do stage3, evitando gerar ferramentas de build incompatíveis
 com a CPU do runner.
 
+> **Atenção:** o Catalyst **reescreve** o `etc/portage/make.conf` do chroot em
+> cada etapa e preserva apenas `COMMON_FLAGS`/`CFLAGS`/`CXXFLAGS`/`FCFLAGS`/
+> `FFLAGS` lidos do `portage_confdir`. Por isso `USE`, `L10N`, `VIDEO_CARDS` e
+> `INPUT_DEVICES` são definidos na chave `livecd/use` de
+> [catalyst/livecd-stage1.spec.in](../catalyst/livecd-stage1.spec.in) e as
+> licenças em [portage/package.license/](../portage/package.license).
+
 ## 2. Estratégia de compilação em nuvem (GitHub Actions)
 O notebook não tem potência para compilar o ecossistema Gentoo. A ISO é
 construída no runner com o Catalyst em três etapas encadeadas:
@@ -26,8 +33,8 @@ construída no runner com o Catalyst em três etapas encadeadas:
 3. **livecd-stage1** — instala em um chroot limpo todos os aplicativos
    (Openbox, FBPanel, SLiM, Firefox-bin, Kodi, VLC, Strawberry, LibreOffice-bin,
    Flatpak, drivers, firmware...). O `portage_confdir` aponta para
-   [portage/](../portage), que contém `make.conf`, `package.use` e
-   `package.accept_keywords`.
+   [portage/](../portage), que contém `make.conf`, `package.use`,
+   `package.accept_keywords` e `package.license`.
 4. **livecd-stage2** — compila o kernel com `gentoo-sources` + genkernel,
    aplica o [overlay/](../overlay) (SLiM, Openbox, FBPanel, Xorg, locale),
    executa o [fsscript](../catalyst/fsscript.sh), habilita os serviços OpenRC e
@@ -46,8 +53,16 @@ O script que orquestra tudo é [scripts/build-iso.sh](../scripts/build-iso.sh).
   menu está em [overlay/home/a4/.config/fbpanel/default](../overlay/home/a4/.config/fbpanel/default).
 
 ## 4. Gerenciamento de dependências e licenças
-* **Licenças:** `ACCEPT_LICENSE="*"` no `make.conf` libera firmwares
-  proprietários da AMD e o Firefox-bin.
+* **Licenças:** `ACCEPT_LICENSE="*"` **não funciona** aqui, porque o Catalyst
+  reescreve o `make.conf` do chroot. A liberação é feita em
+  [portage/package.license/a4-target](../portage/package.license/a4-target)
+  com `*/* @BINARY-REDISTRIBUTABLE` (blobs `radeon` do linux-firmware,
+  intel-ucode) e `*/* @FREE` (GPL, MPL, BSD, MIT...).
+* **Keywords:** `sys-kernel/linux-firmware` e `sys-auth/elogind` só existem em
+  `~amd64`, então estão liberados em
+  [portage/package.accept_keywords/a4-target](../portage/package.accept_keywords/a4-target).
+  Sem isso o emerge aborta com
+  `All ebuilds that could satisfy "..." have been masked`.
 * **Ciclo de dependências:** o perfil desktop exige `media-libs/freetype[harfbuzz]`
   (por causa do pango) e isso cria o ciclo
   `docutils -> pillow[truetype] -> harfbuzz -> glib -> docutils`. A correção

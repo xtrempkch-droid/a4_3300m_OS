@@ -1,3 +1,12 @@
 # genkernel não possui keywords estáveis no Gentoo (é independente de arch),
 # mas é obrigatório para o Catalyst compilar o kernel do livecd.
 sys-kernel/genkernel ~amd64
+
+# Todas as versões de linux-firmware estão em ~amd64 (nenhuma estável), então
+# sem isto o emerge aborta com "All ebuilds that could satisfy ... have been masked".
+# O firmware radeon/SUMO_*.bin é obrigatório para a Radeon HD 6480G.
+sys-kernel/linux-firmware ~amd64
+
+# Todas as versões de elogind estão em ~amd64 (não há versão estável).
+# É dependência do polkit/flatpak e usado pelo display-manager-init.
+sys-auth/elogind ~amd64

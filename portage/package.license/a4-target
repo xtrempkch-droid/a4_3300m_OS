@@ -1,0 +1,9 @@
+# O Catalyst REESCREVE /etc/portage/make.conf do chroot a cada etapa, então
+# ACCEPT_LICENSE definido no make.conf é descartado. A liberação de licenças
+# precisa vir por package.license.
+
+# Firmware proprietário (linux-firmware: blobs radeon/SUMO_*.bin, intel-ucode).
+*/* @BINARY-REDISTRIBUTABLE
+
+# Todo o resto do sistema é software livre (GPL, MPL, BSD, MIT...).
+*/* @FREE

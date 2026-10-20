@@ -14,6 +14,18 @@ snapshot_treeish: @SNAPSHOT@
 source_subpath: @STAGE3_SUBPATH@
 portage_confdir: @WORKSPACE@/portage
 
+# ATENÇÃO: o Catalyst gera o /etc/portage/make.conf do chroot e descarta o
+# make.conf do portage_confdir (só COMMON_FLAGS/CFLAGS/CXXFLAGS/FCFLAGS/FFLAGS
+# sobrevivem). Por isso o USE vem daqui e as licenças de package.license.
+livecd/use:
+	X alsa pulseaudio elogind vaapi vdpau
+	mp3 mp4 mpeg flac vorbis ogg
+	truetype unicode jpeg png udev dbus policykit
+	-gnome -kde -systemd -wayland -bluetooth
+	video_cards_radeon video_cards_r600
+	input_devices_libinput
+	l10n_pt-BR
+
 livecd/packages:
   app-admin/sudo
   app-admin/sysklogd
