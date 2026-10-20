@@ -48,7 +48,10 @@ jobs:
           EMERGE_DEFAULT_OPTS="--jobs=2 --load-average=6"
           EOF
 
-          emerge --oneshot dev-util/catalyst sec-keys/openpgp-keys-gentoo-release app-crypt/gnupg
+          # Alguns pacotes exigem ajustes de USE (ex.: util-linux[python] p/ catalyst);
+          # sem autounmask o emerge aborta com "The following USE changes are necessary".
+          emerge --oneshot --autounmask-write=y --autounmask-continue=y \
+            dev-util/catalyst sec-keys/openpgp-keys-gentoo-release app-crypt/gnupg
 
       - name: Gerar a ISO (stage3 + snapshot + stage1 + stage2)
         env:
