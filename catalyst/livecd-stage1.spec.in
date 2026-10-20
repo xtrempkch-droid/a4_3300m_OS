@@ -25,6 +25,8 @@ livecd/use:
 	video_cards_radeon video_cards_r600
 	input_devices_libinput
 	l10n_pt-BR
+	cpu_flags_x86_mmx cpu_flags_x86_mmxext cpu_flags_x86_sse cpu_flags_x86_sse2
+	cpu_flags_x86_sse3 cpu_flags_x86_ssse3 cpu_flags_x86_sse4a cpu_flags_x86_popcnt
 
 livecd/packages:
   app-admin/sudo

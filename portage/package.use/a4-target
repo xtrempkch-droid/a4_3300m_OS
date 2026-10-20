@@ -13,3 +13,8 @@ sys-apps/flatpak -systemd
 
 # Firmware não precisa ser embutido em initramfs (economiza espaço na ISO).
 sys-kernel/linux-firmware -initramfs
+
+# O perfil base força kodi[gbm] (>=media-tv/kodi-20.2 gbm udev), mas o Kodi
+# declara REQUIRED_USE "vdpau? ( X !gles !gbm )". No alvo usamos X11 + VDPAU
+# na Radeon HD 6480G, então o gbm precisa ser desligado.
+media-tv/kodi -gbm
