@@ -21,21 +21,51 @@ concurrency:
 jobs:
   build-iso:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 355
     container:
       image: gentoo/stage3:amd64-openrc
       options: --privileged
     env:
       VERSION_STAMP: R1
+      # Tempo máximo de cada etapa do Catalyst. Fica abaixo do timeout do job
+      # para que o cache de binários seja salvo mesmo quando a etapa estoura.
+      STAGE1_TIMEOUT: '15600'
+      STAGE2_TIMEOUT: '2700'
 
     steps:
       - name: Baixar o código do repositório
         uses: actions/checkout@v4
 
+      - name: Restaurar cache de build (binpkgs, distfiles, snapshots)
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /var/tmp/catalyst/packages
+            /var/tmp/catalyst/snapshots
+            /var/cache/distfiles
+          key: catalyst-${{ hashFiles('catalyst/**', 'portage/**', 'scripts/**') }}
+          restore-keys: |
+            catalyst-
+
       - name: Preparar o Catalyst no container de build
         run: |
           set -euo pipefail
-          mkdir -p /etc/portage/package.accept_keywords
+          mkdir -p /etc/portage/package.accept_keywords /etc/portage/package.use
+          mkdir -p /etc/portage/binrepos.conf
+
+          # Binhost oficial: as ferramentas do HOST (catalyst, grub, genkernel)
+          # são genéricas e não precisam de -march=btver1. Usar binpkgs aqui
+          # evita ~20 min de compilação por execução. O chroot do alvo NÃO usa
+          # este binhost (catalyst só escreve binrepos.conf se "binhost"
+          # estiver definido em catalyst.conf).
+          cat > /etc/portage/binrepos.conf/gentoo.conf <<'EOF'
+          [gentoo]
+          priority = 9999
+          sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64/
+          verify-signature = false
+          EOF
+
           emerge-webrsync
 
           # O Catalyst só é publicado como ~amd64 no repositório oficial.
@@ -45,18 +75,55 @@ jobs:
           cat >> /etc/portage/make.conf <<'EOF'
           GRUB_PLATFORMS="efi-32 efi-64 pc"
           MAKEOPTS="-j4"
-          EMERGE_DEFAULT_OPTS="--jobs=2 --load-average=6"
+          EMERGE_DEFAULT_OPTS="--jobs=4 --load-average=8"
           EOF
 
-          # Alguns pacotes exigem ajustes de USE (ex.: util-linux[python] p/ catalyst);
-          # sem autounmask o emerge aborta com "The following USE changes are necessary".
-          emerge --oneshot --autounmask-write=y --autounmask-continue=y \
+          # USE exigidas por dependências do Catalyst (o emerge abortaria com
+          # "The following USE changes are necessary to proceed").
+          echo '>=sys-apps/util-linux-2.42.3 python' > /etc/portage/package.use/catalyst
+
+          emerge --oneshot --getbinpkg --usepkg \
+            --autounmask-write=y --autounmask-continue=y \
             dev-util/catalyst sec-keys/openpgp-keys-gentoo-release app-crypt/gnupg
+
+          # CRÍTICO: sem "jobs" o Catalyst define MAKEOPTS="" e o emerge dentro
+          # do chroot compila em série (-j1), o que estoura o tempo do runner.
+          # (var_tmpfs_portage fica desligado de propósito: 8 GB de tmpfs num
+          # runner de 16 GB pode causar OOM durante llvm/mesa/kodi.)
+          cat >> /etc/catalyst/catalyst.conf <<'EOF'
+
+          jobs = 4
+          load-average = 6.0
+          port_logdir = "/var/tmp/catalyst/logs"
+          EOF
+
+          mkdir -p /var/tmp/catalyst/logs
 
       - name: Gerar a ISO (stage3 + snapshot + stage1 + stage2)
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
         run: ./scripts/build-iso.sh
+
+      - name: Salvar cache de build
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /var/tmp/catalyst/packages
+            /var/tmp/catalyst/snapshots
+            /var/cache/distfiles
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+
+      - name: Upload dos logs do Catalyst
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalyst-logs
+          path: |
+            /var/tmp/catalyst/logs/**
+            /tmp/livecd-stage*.spec
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload da ISO pronta
         uses: actions/upload-artifact@v4

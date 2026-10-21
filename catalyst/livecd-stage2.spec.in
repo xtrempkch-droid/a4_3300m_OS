@@ -26,7 +26,7 @@ livecd/iso: gentoo-a4-media-@VERSION_STAMP@.iso
 
 # Remove arquivos que não são usados em runtime (economia de espaço na ISO).
 # NÃO inclua /usr/share/locale: as traduções pt-BR são necessárias.
-livecd/unmerge: sys-kernel/gentoo-sources sys-kernel/genkernel dev-lang/rust-bin
+livecd/unmerge: sys-kernel/gentoo-sources sys-kernel/genkernel
 livecd/empty: /var/tmp /var/cache /var/log /tmp /usr/src /usr/include /usr/share/man /usr/share/info /usr/share/doc /usr/share/gtk-doc /usr/share/genkernel
 
 # Configurações, usuário e autologin da interface.

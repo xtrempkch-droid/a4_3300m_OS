@@ -1,15 +1,32 @@
 #!/usr/bin/env bash
 # Gera a ISO do A4 Media OS usando Catalyst (stage3 -> stage1 -> stage2).
+#
+# O build é INCREMENTAL entre execuções do GitHub Actions: os binpkgs ficam em
+# ${STOREDIR}/packages e são restaurados/salvos pelo cache do workflow. Se uma
+# etapa estourar o tempo, o cache é salvo e a próxima execução continua de onde
+# parou (portage reaproveita os .gpkg.tar com --usepkg).
 set -euo pipefail
 
 REPO_ROOT=${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
 VERSION_STAMP=${VERSION_STAMP:-R1}
 STOREDIR=${STOREDIR:-/var/tmp/catalyst}
 BUILDS="${STOREDIR}/builds/default"
+PKGCACHE="${STOREDIR}/packages/default/livecd-stage1-amd64-${VERSION_STAMP}"
 SNAPSHOT_REPO="${STOREDIR}/repos/gentoo.git"
 STAGE3_URL="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-openrc"
+STAGE1_TIMEOUT=${STAGE1_TIMEOUT:-15600}
+STAGE2_TIMEOUT=${STAGE2_TIMEOUT:-2700}
+LOG_DIR="${STOREDIR}/logs"
 
-mkdir -p "${BUILDS}"
+mkdir -p "${BUILDS}" "${LOG_DIR}"
+
+show_progress() {
+    local pkgs=0
+    if [[ -d "${PKGCACHE}" ]]; then
+        pkgs=$(find "${PKGCACHE}" -name '*.gpkg.tar' 2>/dev/null | wc -l)
+    fi
+    echo "    binpkgs já construídos: ${pkgs}"
+}
 
 echo "==> Baixando o stage3 OpenRC mais recente"
 latest_index=$(curl -fsSL --retry 5 --retry-delay 5 "${STAGE3_URL}/latest-stage3-amd64-openrc.txt")
@@ -41,13 +58,38 @@ render_spec() {
         "${template}" > "${output}"
 }
 
+# Executa o Catalyst com limite de tempo. Sai com 0 em sucesso, 124 em timeout.
+run_catalyst() {
+    local spec=$1 limit=$2 label=$3 rc=0
+    set +e
+    timeout -k 120 "${limit}" catalyst -f "${spec}"
+    rc=$?
+    set -e
+    if [[ ${rc} -eq 124 || ${rc} -eq 137 ]]; then
+        echo "AVISO: ${label} excedeu $((limit / 60)) min e foi interrompido." >&2
+        echo "       Os binpkgs construídos foram salvos no cache; a próxima" >&2
+        echo "       execução continua a partir deste ponto." >&2
+    fi
+    return ${rc}
+}
+
+show_progress
+
 echo "==> Catalyst: livecd-stage1 (pacotes)"
 render_spec "${REPO_ROOT}/catalyst/livecd-stage1.spec.in" /tmp/livecd-stage1.spec
-catalyst -f /tmp/livecd-stage1.spec
+if ! run_catalyst /tmp/livecd-stage1.spec "${STAGE1_TIMEOUT}" "livecd-stage1"; then
+    show_progress
+    echo "ERRO: livecd-stage1 não concluiu (veja ${LOG_DIR})." >&2
+    exit 1
+fi
+show_progress
 
 echo "==> Catalyst: livecd-stage2 (kernel + ISO)"
 render_spec "${REPO_ROOT}/catalyst/livecd-stage2.spec.in" /tmp/livecd-stage2.spec
-catalyst -f /tmp/livecd-stage2.spec
+if ! run_catalyst /tmp/livecd-stage2.spec "${STAGE2_TIMEOUT}" "livecd-stage2"; then
+    echo "ERRO: livecd-stage2 não concluiu (veja ${LOG_DIR})." >&2
+    exit 1
+fi
 
 echo "==> ISO gerada:"
 ls -lh "${BUILDS}"/gentoo-a4-media-*.iso

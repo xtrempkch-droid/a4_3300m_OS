@@ -34,7 +34,6 @@ livecd/packages:
   app-arch/unzip
   app-misc/livecd-tools
   app-office/libreoffice-bin
-  dev-lang/rust-bin
   gui-libs/display-manager-init
   media-fonts/dejavu
   media-fonts/liberation-fonts
