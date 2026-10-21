@@ -12,7 +12,7 @@ on:
       - 'scripts/**'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-iso-${{ github.ref }}
@@ -124,6 +124,34 @@ jobs:
             /tmp/livecd-stage*.spec
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Publicar log da falha (branch build-logs)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          cd "${GITHUB_WORKSPACE}"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          mkdir -p .build-logs
+          {
+            echo "run: ${GITHUB_RUN_ID}  commit: ${GITHUB_SHA}"
+            echo "=== resumo dos binpkgs ==="
+            find /var/tmp/catalyst/packages -name '*.gpkg.tar' 2>/dev/null | wc -l
+            echo "=== logs do catalyst ==="
+            for f in /var/tmp/catalyst/logs/*; do
+              [ -f "$f" ] || continue
+              echo "----- $f (ultimas 200 linhas) -----"
+              tail -n 200 "$f"
+            done
+          } > .build-logs/last-failure.log 2>&1
+          cp /tmp/livecd-stage1.spec /tmp/livecd-stage2.spec .build-logs/ 2>/dev/null || true
+          git checkout -B build-logs
+          git add -f .build-logs
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "log: falha no run ${GITHUB_RUN_ID}" || true
+          git push -f origin HEAD:build-logs
 
       - name: Upload da ISO pronta
         uses: actions/upload-artifact@v4
