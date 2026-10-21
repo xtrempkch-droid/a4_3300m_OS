@@ -99,6 +99,12 @@ jobs:
 
           mkdir -p /var/tmp/catalyst/logs
 
+      - name: Diagnóstico de espaço em disco
+        run: |
+          df -h / /var/tmp 2>/dev/null || df -h /
+          echo "--- cache de binpkgs restaurado ---"
+          find /var/tmp/catalyst/packages -name '*.gpkg.tar' 2>/dev/null | wc -l
+
       - name: Gerar a ISO (stage3 + snapshot + stage1 + stage2)
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
@@ -106,12 +112,15 @@ jobs:
 
       - name: Salvar cache de build
         if: always() && steps.cache.outputs.cache-hit != 'true'
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: |
             /var/tmp/catalyst/packages
             /var/tmp/catalyst/snapshots
             /var/cache/distfiles
+          # O limite do GitHub é 10 GB por entrada de cache; se estourar, o
+          # passo falha de forma silenciosa (continue-on-error acima).
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
       - name: Upload dos logs do Catalyst
