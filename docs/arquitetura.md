@@ -42,6 +42,25 @@ construída no runner com o Catalyst em três etapas encadeadas:
 
 O script que orquestra tudo é [scripts/build-iso.sh](../scripts/build-iso.sh).
 
+### Build incremental e limite de tempo
+O build completo não cabe confortavelmente no limite de 350 min do runner, então
+o workflow foi feito para **continuar de onde parou**:
+
+* `jobs = 4` e `load-average = 6.0` são gravados em
+  `/etc/catalyst/catalyst.conf`. Sem isso o Catalyst exporta `MAKEOPTS=""` para
+  o chroot e o emerge compila **em série** (`-j1`).
+* O workflow restaura/salva `actions/cache` com
+  `/var/tmp/catalyst/packages` (binpkgs `.gpkg.tar`), `/var/tmp/catalyst/snapshots`
+  e `/var/cache/distfiles`. Uma nova execução reaproveita tudo com `--usepkg`.
+* [scripts/build-iso.sh](../scripts/build-iso.sh) executa cada etapa com
+  `timeout` (`STAGE1_TIMEOUT`=4h20, `STAGE2_TIMEOUT`=45 min), abaixo do limite
+  do job, para que o cache seja salvo mesmo quando a etapa estoura.
+* O host usa o binhost oficial `binpackages/23.0/x86-64` apenas para as
+  ferramentas de build (catalyst, grub, genkernel) — o chroot do alvo continua
+  sendo compilado com `-march=btver1`.
+* Em caso de falha, as últimas 200 linhas de cada log do Catalyst e os specs
+  renderizados são commitados em `.build-logs/` na branch `build-logs`.
+
 ## 3. Interface gráfica
 * **Openbox + FBPanel:** o Openbox desenha apenas as janelas; o FBPanel fornece
   a barra estilo Windows 95 e consome poucos MB de RAM.
