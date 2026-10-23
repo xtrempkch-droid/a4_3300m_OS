@@ -95,13 +95,10 @@ jobs:
           restore-keys: |
             binpkgs-
 
-      - name: Restaurar distfiles e snapshots
+      - name: Restaurar distfiles
         uses: actions/cache/restore@v4
         with:
-          path: |
-            /var/cache/distfiles
-            /var/tmp/catalyst/snapshots
-            /var/tmp/catalyst/.snapshot-sha
+          path: /var/cache/distfiles
           key: distfiles-${{ hashFiles('catalyst/**', 'portage/**', 'scripts/**') }}
           restore-keys: |
             distfiles-
@@ -139,13 +136,21 @@ jobs:
           path: /var/tmp/catalyst/packages
           key: ${{ steps.cache_binpkgs.outputs.cache-primary-key }}
 
+      - name: Salvar distfiles
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: /var/cache/distfiles
+          key: distfiles-${{ hashFiles('catalyst/**', 'portage/**', 'scripts/**') }}
+
       - name: Salvar artefato do stage1 (seed do stage2)
         if: steps.build.outputs.complete == 'true'
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: |
-            /var/tmp/catalyst/builds/default/livecd-stage1-amd64-R1.tar.*
+            /var/tmp/catalyst/builds
             /var/tmp/catalyst/snapshots
             /var/tmp/catalyst/.snapshot-sha
           key: stage1-out-${{ github.run_id }}
@@ -187,7 +192,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            /var/tmp/catalyst/builds/default
+            /var/tmp/catalyst/builds
             /var/tmp/catalyst/snapshots
             /var/tmp/catalyst/.snapshot-sha
           key: stage1-out-${{ github.run_id }}

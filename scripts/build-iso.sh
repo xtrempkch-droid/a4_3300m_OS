@@ -64,6 +64,10 @@ resolve_snapshot() {
     SNAPSHOT=$(git -C "${SNAPSHOT_REPO}" rev-parse stable)
     printf '%s\n' "${SNAPSHOT}" > "${SNAPSHOT_SHA_FILE}"
     echo "    snapshot: ${SNAPSHOT}"
+
+    # Mantém só o squashfs atual: snapshots antigos inchariam o cache do CI.
+    find "${STOREDIR}/snapshots" -name 'gentoo-*.sqfs' \
+        ! -name "gentoo-${SNAPSHOT}.sqfs" -delete 2>/dev/null || true
 }
 
 render_spec() {
